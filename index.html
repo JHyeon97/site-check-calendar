@@ -6,21 +6,83 @@
   <title>현장 체크 캘린더</title>
   <script src="https://apis.google.com/js/api.js"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 2rem; background: #f4f4f4; }
-    button { padding: 0.5rem 1rem; font-size: 1rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    #calendar-list { margin-top: 2rem; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 1rem; background: #f4f4f4; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h1 { font-size: 1.5rem; margin-bottom: 1rem; text-align: center; }
+    .chatbox { border: 1px solid #ccc; padding: 1rem; height: 300px; overflow-y: auto; background: #fefefe; border-radius: 4px; }
+    .chat-entry { margin: 0.5rem 0; }
+    .chat-entry.user { text-align: right; color: blue; }
+    .chat-entry.bot { text-align: left; color: #333; }
+    input[type="text"] { width: 100%; padding: 0.5rem; margin-top: 1rem; box-sizing: border-box; }
+    button { width: 100%; padding: 0.75rem; font-size: 1rem; margin-top: 0.5rem; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 4px; }
+    #calendar-list { margin-top: 1.5rem; background: white; padding: 1rem; border-radius: 8px; border: 1px solid #ddd; }
   </style>
 </head>
 <body>
-  <h1>📅 구글 캘린더 연동 테스트</h1>
-  <button onclick="initGoogleCalendar()">구글 캘린더 보기</button>
-  <div id="calendar-list"></div>
+  <div class="container">
+    <h1>👷‍♂️ 안녕하세요! 오늘의 현장 체크를 시작합니다</h1>
+
+    <div class="chatbox" id="chatbox"></div>
+    <input type="text" id="chat-input" placeholder="y / n / r 로 입력 후 Enter" onkeypress="if(event.key==='Enter'){sendChat()}" />
+
+    <button onclick="initGoogleCalendar()">📅 구글 캘린더 보기</button>
+    <div id="calendar-list"></div>
+  </div>
 
   <script>
     const CLIENT_ID = '329781321346-quup49fmc35qqdrj0e961s9p46p9ba0j.apps.googleusercontent.com';
     const API_KEY = 'AIzaSyDnD_uxoAsUE6GFQo0LTtRLKgkaBjP3b50';
     const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
     const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+
+    const checklistItems = [
+      '1. 합의서 작성',
+      '2. 목공 시공비 정산',
+      '3. 천장반자틀 간격 사진 등록',
+      '4. 단열재 부착사진 등록',
+      '5. 단열재 상걸린사진 등록'
+    ];
+    let currentIndex = 0;
+
+    function botSay(message) {
+      const chat = document.getElementById('chatbox');
+      const div = document.createElement('div');
+      div.className = 'chat-entry bot';
+      div.textContent = message;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function userSay(message) {
+      const chat = document.getElementById('chatbox');
+      const div = document.createElement('div');
+      div.className = 'chat-entry user';
+      div.textContent = message;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendChat() {
+      const input = document.getElementById('chat-input');
+      const value = input.value.trim().toLowerCase();
+      if (!['y', 'n', 'r'].includes(value)) {
+        botSay('⚠️ y, n, r 중 하나로 입력해주세요');
+        return;
+      }
+      userSay(value);
+      if (currentIndex < checklistItems.length - 1) {
+        currentIndex++;
+        botSay(checklistItems[currentIndex]);
+      } else {
+        botSay('✅ 모든 항목 체크 완료! 고생하셨어요 🙌');
+      }
+      input.value = '';
+    }
+
+    window.onload = () => {
+      botSay(`오늘의 체크 항목은 총 ${checklistItems.length}개입니다.`);
+      botSay(checklistItems[currentIndex]);
+    };
 
     function initGoogleCalendar() {
       gapi.load('client:auth2', () => {
@@ -48,7 +110,7 @@
       }).then(response => {
         const events = response.result.items;
         const calendarList = document.getElementById('calendar-list');
-        calendarList.innerHTML = '<h2>📌 다가오는 일정</h2>';
+        calendarList.innerHTML = '<h3>📅 오늘 이후 일정</h3>';
         if (events.length > 0) {
           events.forEach(event => {
             const when = event.start.dateTime || event.start.date;
@@ -57,7 +119,7 @@
             calendarList.appendChild(item);
           });
         } else {
-          calendarList.innerHTML += '<p>일정이 없습니다.</p>';
+          calendarList.innerHTML += '<p>표시할 일정이 없습니다.</p>';
         }
       });
     }
