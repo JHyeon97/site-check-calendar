@@ -1,6 +1,66 @@
-<script>
-const CLIENT_ID = '329781321346-quup49fmc35qqdrj0e961s9p46p9ba0j.apps.googleusercontent.com';
-const API_KEY = 'AIzaSyDnD_uxoAsUE6GFQo0LTtRLKgkaBjP3b50';
-const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
-const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
-</script>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>현장 체크 캘린더</title>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 2rem; background: #f4f4f4; }
+    button { padding: 0.5rem 1rem; font-size: 1rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    #calendar-list { margin-top: 2rem; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <h1>📅 구글 캘린더 연동 테스트</h1>
+  <button onclick="initGoogleCalendar()">구글 캘린더 보기</button>
+  <div id="calendar-list"></div>
+
+  <script>
+    const CLIENT_ID = '329781321346-quup49fmc35qqdrj0e961s9p46p9ba0j.apps.googleusercontent.com';
+    const API_KEY = 'AIzaSyDnD_uxoAsUE6GFQo0LTtRLKgkaBjP3b50';
+    const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
+    const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+
+    function initGoogleCalendar() {
+      gapi.load('client:auth2', () => {
+        gapi.client.init({
+          apiKey: API_KEY,
+          clientId: CLIENT_ID,
+          discoveryDocs: DISCOVERY_DOCS,
+          scope: SCOPES
+        }).then(() => {
+          return gapi.auth2.getAuthInstance().signIn();
+        }).then(() => {
+          listUpcomingEvents();
+        });
+      });
+    }
+
+    function listUpcomingEvents() {
+      gapi.client.calendar.events.list({
+        calendarId: 'primary',
+        timeMin: new Date().toISOString(),
+        showDeleted: false,
+        singleEvents: true,
+        maxResults: 5,
+        orderBy: 'startTime'
+      }).then(response => {
+        const events = response.result.items;
+        const calendarList = document.getElementById('calendar-list');
+        calendarList.innerHTML = '<h2>📌 다가오는 일정</h2>';
+        if (events.length > 0) {
+          events.forEach(event => {
+            const when = event.start.dateTime || event.start.date;
+            const item = document.createElement('div');
+            item.textContent = `${when} - ${event.summary}`;
+            calendarList.appendChild(item);
+          });
+        } else {
+          calendarList.innerHTML += '<p>일정이 없습니다.</p>';
+        }
+      });
+    }
+  </script>
+</body>
+</html>
